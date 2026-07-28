@@ -1,0 +1,161 @@
+=== PDF INSPECTION REPORT ===
+
+File: C++ Cheatsheet.pdf
+Number of Pages: 9
+--- Content Preview (First 3 Pages) ---
+--- Page 1 ---
+C++ Cheatsheet
+Basics
+Boilerplate
+Input/Output
+Output (cout <<) – Prints to console
+Input (cin >>) – Takes user input
+Data Types
+C++ supports several data types, divided into categories:
+#include <iostream>
+using namespace std;
+int main(){
+    cout <<"Welcome To CodeWithHarry";
+return0;
+}
+• 
+• 
+string name;
+cout <<"Enter name: ";
+cin >> name;
+cout <<"Hello, "<< name;
+--- Page 2 ---
+Type Example Size (Typical) Description
+char char c='A'; 1 byte Stores single character
+int int x=10; 4 bytes Integer numbers
+shor
+t short s=100; 2 bytes Small integer
+long long l=100000;4-8 bytes Large integer
+floa
+t float f=10.5; 4 bytes Single-precision decimal
+doub
+le
+double 
+d=10.55; 8 bytes Double-precision decimal
+bool bool 
+flag=true; 1 byte True/False values
+void – – Represents no value
+Escape Sequences
+Sequence Meaning
+\a Alert (beep)
+\b Backspace
+\f Form feed
+\n Newline
+\r Carriage return
+\t Horizontal tab
+\\ Backslash
+\' Single quote
+--- Page 3 ---
+Sequence Meaning
+\" Double quote
+\? Question mark
+\0 Null terminator
+\nnn Octal value
+\xhh Hexadecimal value
+Comments
+Strings
+// Single-line comment
+/* Multi-line
+   comment */
+#include <string>
+string s1 ="Hello";
+string s2 ="World";
+// Concatenation
+string s3 = s1 +" "+ s2;
+// Append
+s1.append(s2);
+// Length
+cout << s3.length();
+=======================================
+
+File: DSA_CompleteNotes.pdf
+Number of Pages: 30
+--- Content Preview (First 3 Pages) ---
+--- Page 1 ---
+[No text extracted]
+--- Page 2 ---
+ 
+
+--- Page 3 ---
+ 
+ 
+  
+
+=======================================
+
+File: JS_Chapterwise_Notes.pdf
+Number of Pages: 80
+--- Content Preview (First 3 Pages) ---
+--- Page 1 ---
+[No text extracted]
+--- Page 2 ---
+[No text extracted]
+--- Page 3 ---
+[No text extracted]
+=======================================
+
+File: The Ultimate Python Handbook.pdf
+Number of Pages: 60
+--- Content Preview (First 3 Pages) ---
+--- Page 1 ---
+[No text extracted]
+--- Page 2 ---
+Python Programming Handbook
+Beginner Friendly Learning Guide
+CHAPTER 01
+What is Programming?
+Just like we use Hindi or English to communicate with each other, we use programming languages like
+Python to communicate with computers.
+Programming is the process of giving instructions to a computer so it can perform tasks, solve
+problems, and automate work.
+What is Python?
+Python is one of the easiest and most beginner friendly programming languages. Its syntax feels close
+to simple English which makes it easy to read, write, and understand.
+Python is widely used in web development, automation, artificial intelligence, machine learning, data
+science, and software development.
+Features of Python
+01
+Easy to learn and beginner friendly syntax.
+02
+Free and open source programming language.
+03
+Works on Windows, Linux, and Mac systems.
+04
+Widely used in modern technologies and AI.
+Installation
+GETTING STARTED
+Just install it
+like a game
+Python can be downloaded from python.org Download the installer for your
+operating system and complete the setup process.
+
+--- Page 3 ---
+Python Programming Handbook
+Beginner Friendly Learning Guide
+CHAPTER 01
+Modules, Comments & Pip
+Letʼs write our very first python program. Create a file called hello.py and paste the below code in it.
+print("hello world") # print is a function
+Execute this file by typing python hello.py and you will see Hello World printed on the screen.
+Modules
+A module is a file containing code written by somebody else which can be imported and used in our
+programs.
+Pip
+Pip is the package manager for Python. You can use pip to install external modules on your system.
+pip install flask
+Types of Modules
+There are two types of modules in Python.
+01
+Builtin Modules are preinstalled with Python.
+02
+External Modules need to be installed using
+pip.
+Examples of builtin modules are os and random. Examples of external modules are tensorflow and
+flask.
+=======================================
+

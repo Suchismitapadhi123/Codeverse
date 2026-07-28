@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        (function() {
+            let user = '';
+            try {
+                user = sessionStorage.getItem('codeverse_current_user') || window.name;
+            } catch (e) {
+                user = window.name;
+            }
+            if (!user) {
+                window.location.href = 'login.html';
+            }
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CodeVerse - Get instant developer explanations, algorithm breakdowns, and compiler debugging help.">
+    <title>AI Developer Code Tutor - CodeVerse</title>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- CODE TUTOR CONSOLE STYLING --- */
+        .tutor-container {
+            display: grid;
+            grid-template-columns: 310px 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+            height: calc(100vh - 170px);
+            min-height: 550px;
+        }
+
+        .tutor-sidebar {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .tutor-sidebar h3 {
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-neon);
+        }
+
+        .presets-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .btn-preset {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border-neon);
+            color: var(--text-secondary);
+            padding: 0.65rem 0.85rem;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            text-align: left;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            line-height: 1.3;
+        }
+
+        .btn-preset:hover {
+            background: rgba(0, 242, 254, 0.04);
+            border-color: var(--color-teal);
+            color: var(--text-primary);
+            transform: translateX(4px);
+        }
+
+        .api-status-box {
+            padding: 1.2rem;
+            background: rgba(255, 255, 255, 0.01);
+            border-radius: 8px;
+            border: 1px solid var(--border-neon);
+            margin-top: auto; /* Push to bottom */
+            flex-shrink: 0;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.25rem 0.55rem;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+        }
+
+        .status-badge.mock {
+            background: rgba(0, 242, 254, 0.1);
+            color: var(--color-teal);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+        }
+
+        .status-badge.live {
+            background: rgba(0, 255, 135, 0.1);
+            color: var(--color-green);
+            border: 1px solid rgba(0, 255, 135, 0.2);
+        }
+
+        /* Chat Workspace */
+        .chat-console {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 1.25rem 2rem;
+            border-bottom: 1px solid var(--border-neon);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header-info h2 {
+            font-family: var(--font-mono);
+            font-size: 1.2rem;
+        }
+
+        .chat-header-info p {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .chat-logs {
+            flex-grow: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .chat-bubble {
+            display: flex;
+            gap: 1rem;
+            max-width: 85%;
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .chat-bubble.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .chat-bubble.ai {
+            align-self: flex-start;
+        }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            font-family: var(--font-mono);
+        }
+
+        .chat-bubble.user .avatar {
+            background: var(--color-violet);
+            color: white;
+        }
+
+        .chat-bubble.ai .avatar {
+            background: var(--grad-terminal);
+            color: var(--bg-terminal);
+        }
+
+        .bubble-content {
+            padding: 1rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .chat-bubble.user .bubble-content {
+            background: rgba(157, 78, 237, 0.08);
+            border: 1px solid rgba(157, 78, 237, 0.25);
+            border-top-right-radius: 2px;
+            color: var(--text-primary);
+        }
+
+        .chat-bubble.ai .bubble-content {
+            background: rgba(255, 255, 255, 0.015);
+            border: 1px solid var(--border-neon);
+            border-top-left-radius: 2px;
+            color: var(--text-primary);
+        }
+
+        /* Markdown inner buble */
+        .bubble-content h4 {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            margin: 1.25rem 0 0.5rem 0;
+            color: var(--color-teal);
+        }
+        .bubble-content h4:first-child {
+            margin-top: 0;
+        }
+
+        .bubble-content ol, .bubble-content ul {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .bubble-content li {
+            margin-bottom: 0.4rem;
+        }
+
+        /* Controls */
+        .chat-input-area {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border-neon);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .chat-input-wrapper {
+            position: relative;
+            flex-grow: 1;
+        }
+
+        .chat-textarea {
+            width: 100%;
+            background: rgba(12, 10, 22, 0.6);
+            border: 1px solid var(--border-neon);
+            border-radius: 8px;
+            padding: 0.9rem 1.25rem;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            outline: none;
+            resize: none;
+            height: 46px;
+            line-height: 1.5;
+            transition: var(--transition-fast);
+            padding-right: 3rem;
+            overflow-y: hidden;
+        }
+
+        .chat-textarea:focus {
+            border-color: var(--color-teal);
+            box-shadow: var(--glow-teal);
+        }
+
+        .btn-send {
+            background: var(--color-teal);
+            border: none;
+            color: var(--bg-terminal);
+            width: 46px;
+            height: 46px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            box-shadow: var(--glow-teal);
+            flex-shrink: 0;
+        }
+
+        .btn-send:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.6);
+        }
+
+        /* Typing indicator */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .typing-indicator span {
+            width: 5px;
+            height: 5px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            animation: wave 1.2s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes wave {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(5, 4, 9, 0.85);
+            backdrop-filter: blur(6px);
+            z-index: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: var(--transition-fast);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-box {
+            width: 100%;
+            max-width: 500px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            transform: scale(0.9);
+            transition: var(--transition-fast);
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-neon);
+            font-family: var(--font-mono);
+        }
+
+        .modal-header h3 {
+            font-size: 1.2rem;
+        }
+
+        .btn-modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .btn-modal-close:hover {
+            color: var(--color-teal);
+        }
+
+        .modal-group {
+            margin-bottom: 1.5rem;
+            font-family: var(--font-mono);
+        }
+
+        .modal-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-input {
+            width: 100%;
+            background: rgba(12, 10, 22, 0.6);
+            border: 1px solid var(--border-neon);
+            border-radius: 6px;
+            padding: 0.8rem 1rem;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        .modal-input:focus {
+            border-color: var(--color-teal);
+        }
+
+        .custom-select {
+            padding: 0.8rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        @media (max-width: 900px) {
+            .tutor-container {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            .tutor-sidebar {
+                display: none; /* Hide sidebar preset prompts on mobile views */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="nav-logo">
+                <i class="fas fa-terminal"></i>
+                <span class="text-gradient">CodeVerse</span>
+            </a>
+            
+            <button class="menu-toggle" aria-label="Toggle Navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <ul class="nav-links">
+                <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="tracks.html"><i class="fas fa-code"></i> Tracks</a></li>
+                <li><a href="flashcards.html"><i class="fas fa-layer-group"></i> Flashcards</a></li>
+                <li><a href="quiz.html"><i class="fas fa-gamepad"></i> Code Quiz</a></li>
+                <li><a href="progress.html"><i class="fas fa-project-diagram"></i> Progress</a></li>
+                <li class="active"><a href="tutor.html"><i class="fas fa-brain"></i> Code Tutor</a></li>
+                <!-- Streak indicator -->
+                <li>
+                    <div class="nav-streak">
+                        <i class="fas fa-bolt"></i>
+                        <span class="nav-streak-value">0 Days</span>
+                    </div>
+                </li>
+                <li><a href="#" id="btn-logout-session" style="color: var(--color-crimson);"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container">
+
+        <div class="tutor-container">
+            
+            <!-- Left Sidebar Navigation -->
+            <aside class="tutor-sidebar terminal-panel animate-fade">
+                
+                <div style="display: flex; flex-direction: column; height: 100%; min-height: 0;">
+                    <h3>Preset Queries</h3>
+                    
+                    <!-- Search Input -->
+                    <input type="text" id="tutor-search-filter" class="modal-input" placeholder="Search 100 topics..." style="margin-bottom: 1rem; padding: 0.5rem 0.8rem; font-size: 0.8rem; border-color: var(--border-neon);">
+
+                    <!-- Topic Filter sub-tabs -->
+                    <div class="category-tabs-row" style="margin-bottom: 1rem; gap: 0.25rem;">
+                        <button class="btn-category-tab active btn-tutor-filter" data-filter="all" style="padding: 0.3rem 0.6rem; font-size: 0.7rem;">All</button>
+                        <button class="btn-category-tab btn-tutor-filter" data-filter="python" style="padding: 0.3rem 0.6rem; font-size: 0.7rem;">Py</button>
+                        <button class="btn-category-tab btn-tutor-filter" data-filter="javascript" style="padding: 0.3rem 0.6rem; font-size: 0.7rem;">JS</button>
+                        <button class="btn-category-tab btn-tutor-filter" data-filter="cpp" style="padding: 0.3rem 0.6rem; font-size: 0.7rem;">C++</button>
+                        <button class="btn-category-tab btn-tutor-filter" data-filter="dsa" style="padding: 0.3rem 0.6rem; font-size: 0.7rem;">DSA</button>
+                    </div>
+
+                    <!-- Dynamic Presets list -->
+                    <div class="presets-list" id="tutor-presets-container" style="overflow-y: auto; flex-grow: 1; margin-bottom: 1rem; max-height: 250px; padding-right: 0.25rem;">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- API Settings status box -->
+                <div class="api-status-box" style="margin-top: auto;">
+                    <h4 style="font-size:0.85rem; margin-bottom:0.25rem; font-family:var(--font-mono);">AI Compiler Engine</h4>
+                    <p style="font-size:0.7rem; color:var(--text-secondary); line-height:1.4;">Configure settings to use Simulated AI or load a Claude API Key.</p>
+                    
+                    <div id="solver-badge-container">
+                        <span class="status-badge mock"><i class="fas fa-magic"></i> Simulated AI</span>
+                    </div>
+                    
+                    <button class="btn btn-secondary btn-sm" id="btn-open-api-modal" style="width:100%; margin-top:1rem; padding:0.5rem; font-size:0.75rem;">
+                        <i class="fas fa-cog"></i> Configure Engine
+                    </button>
+                </div>
+
+            </aside>
+
+            <!-- Chat Console Workspace (Right Column) -->
+            <section class="chat-console terminal-panel animate-slide">
+                
+                <!-- Chat Header -->
+                <div class="chat-header">
+                    <div class="chat-header-info">
+                        <h2>AI Code Tutor Console</h2>
+                        <p id="chat-engine-description">Operating in Interactive Simulator mode. Click preset prompts or type to begin.</p>
+                    </div>
+                    <button class="btn btn-secondary btn-sm" id="btn-clear-chat" title="Clear console buffer">
+                        <i class="fas fa-trash-alt"></i> Clear Logs
+                    </button>
+                </div>
+
+                <!-- Chat Logs Scroll Area -->
+                <div class="chat-logs" id="chat-logs-container">
+                    
+                    <!-- Intro Greeting -->
+                    <div class="chat-bubble ai">
+                        <div class="avatar"><i class="fas fa-terminal"></i></div>
+                        <div class="bubble-content">
+                            <h4>session_initialized.log 💻</h4>
+                            <p>I am your CodeVerse AI Code Tutor. I can help you dry-run algorithms, review code blocks for efficiency, explain systems memory structures, or demonstrate SQL queries.</p>
+                            <p style="margin-top: 0.5rem;">Select one of our **Preset Queries** in the sidebar (we've provided 10 core computer science and engineering templates!) or write your own doubt in the command line below.</p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Input area -->
+                <div class="chat-input-area">
+                    <div class="chat-input-wrapper">
+                        <textarea class="chat-textarea" id="chat-input-box" placeholder="Write query... (Press Enter to execute)"></textarea>
+                    </div>
+                    <button class="btn-send" id="btn-send-message" aria-label="Execute Command">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+    <!-- Settings modal overlay -->
+    <div class="modal-overlay" id="api-modal-overlay">
+        <div class="modal-box terminal-panel">
+            <div class="modal-header">
+                <h3>Configure AI Compiler</h3>
+                <button class="btn-modal-close" id="btn-close-api-modal"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="modal-group">
+                <label for="modal-select-mode">Engine Protocol</label>
+                <select id="modal-select-mode" class="custom-select" style="padding:0.75rem 1rem;">
+                    <option value="live">Live AI Tutor (Free / Online)</option>
+                    <option value="mock">Simulated AI (Offline Syllabus DB)</option>
+                    <option value="claude">Live Claude API (Requires API Key)</option>
+                </select>
+            </div>
+
+            <div class="modal-group" id="modal-key-group" style="display:none;">
+                <label for="modal-input-key">Anthropic Claude API Key</label>
+                <input type="password" id="modal-input-key" class="modal-input" placeholder="sk-ant-...">
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem; line-height:1.4;">
+                    <i class="fas fa-shield-alt"></i> Cached locally inside your sandbox browser instance.
+                </p>
+                <p style="font-size:0.75rem; color:var(--color-crimson); margin-top:0.4rem; line-height:1.4;">
+                    <i class="fas fa-exclamation-triangle"></i> **Developer Note**: Direct browser calls trigger **CORS blocks** on Anthropic's endpoints. Use a CORS-bypass extension or developer proxy to run live keys.
+                </p>
+            </div>
+
+            <button class="btn btn-primary" id="btn-save-api-settings" style="width:100%;">
+                <i class="fas fa-save"></i> Save Configuration
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="dev-footer-card">
+                <h3>Suchismita Padhi</h3>
+                <div class="dev-footer-tagline">
+                    STUDENT DEVELOPER | FULL STACK DEVELOPER | CODEVERSE CREATOR 🚀
+                </div>
+                <div class="dev-footer-links">
+                    <a href="https://www.linkedin.com/in/suchismitapadhi89" target="_blank" rel="noopener noreferrer" class="dev-pill-btn linkedin">
+                        <i class="fab fa-linkedin"></i> LinkedIn
+                    </a>
+                    <a href="https://github.com/Suchismitapadhi123" target="_blank" rel="noopener noreferrer" class="dev-pill-btn github">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                    <a href="https://www.instagram.com/khushi143451?igsh=MWluZDZzbW51azEwaA==" target="_blank" rel="noopener noreferrer" class="dev-pill-btn instagram">
+                        <i class="fab fa-instagram"></i> Instagram
+                    </a>
+                    <a href="mailto:suchismitapadhi89@gmail.com" class="dev-pill-btn email">
+                        <i class="fas fa-envelope"></i> suchismitapadhi89@gmail.com
+                    </a>
+                </div>
+                <div class="dev-footer-copy">
+                    &copy; 2026 Suchismita Padhi • Built with ⚡ HTML, CSS & JavaScript • CodeVerse Student Dev Portal
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/db_tutor.js"></script>
+    <script src="js/tutor.js"></script>
+</body>
+</html>

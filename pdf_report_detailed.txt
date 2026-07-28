@@ -1,0 +1,124 @@
+=== DETAILED PDF REPORT ===
+
+File: C++ Cheatsheet.pdf
+Total Pages: 9
+Pages with text: 9 / 9
+First page with text is Page 1
+--- Sample text from that page ---
+C++ Cheatsheet
+Basics
+Boilerplate
+Input/Output
+Output (cout <<) – Prints to console
+Input (cin >>) – Takes user input
+Data Types
+C++ supports several data types, divided into categories:
+#include <iostream>
+using namespace std;
+int main(){
+    cout <<"Welcome To CodeWithHarry";
+return0;
+}
+• 
+• 
+string name;
+cout <<"Enter name: ";
+cin >> name;
+cout <<"Hello, "<< name;
+--- Selected Snippets from other pages ---
+Page 2: Type Example Size (Typical) Description
+Page 3: Sequence Meaning
+Page 4: Math Functions (<cmath>)
+Page 5: Loops
+Page 6: Pointers
+Page 7: Constructor
+Page 8: File Handling
+Page 9: STL (Standard Template Library):vector, map, set, stack, etc.
+=======================================
+
+File: DSA_CompleteNotes.pdf
+Total Pages: 30
+Pages with text: 10 / 30
+First page with text is Page 6
+--- Sample text from that page ---
+ 
+ 
+F 
+
+--- Selected Snippets from other pages ---
+Page 7: Source: https://stackoverflow.com/questions/3255/big-o-how-do-you-calculate-approximate-it
+Page 16: URBAN
+Page 17: Time Complexity – Competitive Practice Sheet 
+Page 18: 3. Consider the recursive algorithm above, where the random(int n) spends one unit of time to return
+Page 19: return 1; 
+Page 24: URBAN
+Page 27: URBAN
+Page 28: Scanned with
+Page 30: URBAN
+=======================================
+
+File: JS_Chapterwise_Notes.pdf
+Total Pages: 80
+Pages with text: 20 / 80
+First page with text is Page 50
+--- Sample text from that page ---
+Date
+
+--- Selected Snippets from other pages ---
+Page 52: Da
+Page 53: dæssmß•+-z
+Page 54: D 2
+Page 55: elå,ssr.lß+.-e
+Page 56: Date
+Page 60: 00f2
+Page 61: elæssmate
+Page 62: elæssmaf-e
+Page 63: Date
+=======================================
+
+File: The Ultimate Python Handbook.pdf
+Total Pages: 60
+Pages with text: 58 / 60
+First page with text is Page 2
+--- Sample text from that page ---
+Python Programming Handbook
+Beginner Friendly Learning Guide
+CHAPTER 01
+What is Programming?
+Just like we use Hindi or English to communicate with each other, we use programming languages like
+Python to communicate with computers.
+Programming is the process of giving instructions to a computer so it can perform tasks, solve
+problems, and automate work.
+What is Python?
+Python is one of the easiest and most beginner friendly programming languages. Its syntax feels close
+to simple English which makes it easy to read, write, and understand.
+Python is widely used in web development, automation, artificial intelligence, machine learning, data
+science, and software development.
+Features of Python
+01
+Easy to learn and beginner friendly syntax.
+02
+Free and open source programming language.
+03
+Works on Windows, Linux, and Mac systems.
+04
+Widely used in modern technologies and AI.
+Installation
+GETTING STARTED
+Just install it
+like a game
+Python can be downloaded from python.org Download the installer for your
+operating system and complete the setup process.
+
+--- Selected Snippets from other pages ---
+Page 3: Python Programming Handbook
+Page 4: Python as a Calculator
+Page 5: Python Programming Handbook
+Page 6: Python Programming Handbook
+Page 7: Python Programming Handbook
+Page 8: Operators in Python
+Page 9: Python Programming Handbook
+Page 10: Python Programming Handbook
+Page 11: Python Programming Handbook
+=======================================
+

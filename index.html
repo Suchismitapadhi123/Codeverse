@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        (function() {
+            let user = '';
+            try {
+                user = sessionStorage.getItem('codeverse_current_user') || window.name;
+            } catch (e) {
+                user = window.name;
+            }
+            if (!user) {
+                window.location.href = 'login.html';
+            }
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CodeVerse - A premium student programming portal for learning language concepts, practicing output prediction, and debugging code.">
+    <title>CodeVerse - Programming Student Portal</title>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Confetti globally -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* --- CODEVERSE HOME SPECIFIC STYLING --- */
+        .terminal-hero {
+            padding: 5rem 0 3.5rem 0;
+            position: relative;
+        }
+
+        .terminal-header {
+            background: #0f0d1a;
+            border: 1px solid var(--border-neon);
+            border-bottom: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .terminal-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .terminal-dot.red { background: var(--color-crimson); }
+        .terminal-dot.yellow { background: var(--color-amber); }
+        .terminal-dot.green { background: var(--color-green); }
+
+        .terminal-body {
+            background: #060408;
+            border: 1px solid var(--border-neon);
+            padding: 3rem 2rem;
+            border-radius: 0 0 8px 8px;
+            box-shadow: var(--shadow-terminal);
+            text-align: left;
+            position: relative;
+        }
+
+        .prompt-text {
+            font-family: var(--font-mono);
+            color: var(--color-green);
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .terminal-body h1 {
+            font-size: 3.2rem;
+            line-height: 1.15;
+            margin-bottom: 1.25rem;
+            font-weight: 700;
+        }
+
+        .terminal-body p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 750px;
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+        }
+
+        .terminal-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* Programming Tracks grid */
+        .tracks-section {
+            padding: 4rem 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+
+        .section-header h2 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            font-family: var(--font-mono);
+        }
+
+        .section-header p {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .track-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 2rem;
+        }
+
+        .track-card {
+            padding: 2.5rem 2rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .track-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            transition: var(--transition-fast);
+        }
+
+        /* Colors */
+        .track-card.python .track-icon { color: var(--color-teal); text-shadow: var(--glow-teal); }
+        .track-card.js .track-icon { color: var(--color-amber); text-shadow: var(--glow-amber); }
+        .track-card.cpp .track-icon { color: var(--color-violet); text-shadow: var(--glow-violet); }
+        .track-card.dsa .track-icon { color: var(--color-green); text-shadow: var(--glow-green); }
+
+        .track-card:hover .track-icon {
+            transform: scale(1.1) rotate(-5deg);
+        }
+
+        .track-card h3 {
+            font-size: 1.35rem;
+            margin-bottom: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        .track-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1.75rem;
+            line-height: 1.5;
+            flex-grow: 1;
+        }
+
+        /* Hacker status board */
+        .hacker-status-panel {
+            margin-top: 4rem;
+            padding: 2.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .hacker-status-info h3 {
+            font-family: var(--font-mono);
+            font-size: 1.6rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .hacker-status-info p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .status-counters {
+            display: flex;
+            gap: 3rem;
+        }
+
+        .counter-box {
+            text-align: center;
+        }
+
+        .counter-box .number {
+            font-family: var(--font-mono);
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .counter-box .label {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        @media (max-width: 768px) {
+            .terminal-body h1 {
+                font-size: 2.2rem;
+            }
+            .terminal-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .hacker-status-panel {
+                flex-direction: column;
+                text-align: center;
+            }
+            .status-counters {
+                width: 100%;
+                justify-content: space-around;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="nav-logo">
+                <i class="fas fa-terminal"></i>
+                <span class="text-gradient">CodeVerse</span>
+            </a>
+            
+            <button class="menu-toggle" aria-label="Toggle Navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <ul class="nav-links">
+                <li class="active"><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="tracks.html"><i class="fas fa-code"></i> Tracks</a></li>
+                <li><a href="flashcards.html"><i class="fas fa-layer-group"></i> Flashcards</a></li>
+                <li><a href="quiz.html"><i class="fas fa-gamepad"></i> Code Quiz</a></li>
+                <li><a href="progress.html"><i class="fas fa-project-diagram"></i> Progress</a></li>
+                <li><a href="tutor.html"><i class="fas fa-brain"></i> Code Tutor</a></li>
+                <!-- Streak indicator -->
+                <li>
+                    <div class="nav-streak">
+                        <i class="fas fa-bolt"></i>
+                        <span class="nav-streak-value">0 Days</span>
+                    </div>
+                </li>
+                <li><a href="#" id="btn-logout-session" style="color: var(--color-crimson);"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container">
+
+        <!-- Cyber Hero Terminal Panel -->
+        <section class="terminal-hero animate-fade">
+            <div class="terminal-header">
+                <span class="terminal-dot red"></span>
+                <span class="terminal-dot yellow"></span>
+                <span class="terminal-dot green"></span>
+                <span style="margin-left: 0.5rem; flex-grow: 1;">system_init_session.sh</span>
+                <span>UTF-8</span>
+            </div>
+            <div class="terminal-body">
+                <div class="prompt-text"><span id="username-prompt">guest</span>@codeverse:~$ ./initiate_portal</div>
+                <h1>Compile Your <span class="text-gradient">Programming Path</span></h1>
+                <p>Deploy educational logic into practical engineering skills. Master languages like Python, JavaScript, and C++, predict code blocks run outputs, study algorithm complexities, and debug compiling problems via our AI Code Assistant.</p>
+                <div class="terminal-actions">
+                    <a href="tracks.html" class="btn btn-primary"><i class="fas fa-code-branch"></i> Start Coding Tracks</a>
+                    <a href="quiz.html" class="btn btn-secondary"><i class="fas fa-bug"></i> Resolve Code Quizzes</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Subjects Grid Section -->
+        <section class="tracks-section animate-slide">
+            <div class="section-header">
+                <h2>Browse Coding Tracks</h2>
+                <p>Choose a programming discipline to explore syntax definitions and references.</p>
+            </div>
+            
+            <div class="track-grid">
+                <!-- Python -->
+                <div class="track-card terminal-panel glow-teal python">
+                    <div class="track-icon">
+                        <i class="fab fa-python"></i>
+                    </div>
+                    <h3>Python Track</h3>
+                    <p>Review decorators, list comprehensions, object-oriented concepts, and bibliography guides for reference books.</p>
+                    <a href="tracks.html?subject=python" class="btn btn-secondary btn-sm">Load Track</a>
+                </div>
+
+                <!-- JavaScript -->
+                <div class="track-card terminal-panel glow-amber js">
+                    <div class="track-icon">
+                        <i class="fab fa-js-square"></i>
+                    </div>
+                    <h3>JavaScript Track</h3>
+                    <p>Master asynchronous JavaScript (Promises/Async-Await), closure bindings, closures scope, and REST integrations.</p>
+                    <a href="tracks.html?subject=javascript" class="btn btn-secondary btn-sm">Load Track</a>
+                </div>
+
+                <!-- C++ -->
+                <div class="track-card terminal-panel glow-violet cpp">
+                    <div class="track-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h3>C++ Track</h3>
+                    <p>Analyze pointer arithmetic, manual memory allocation, inheritance structures, and compiled library lookups.</p>
+                    <a href="tracks.html?subject=cpp" class="btn btn-secondary btn-sm">Load Track</a>
+                </div>
+
+                <!-- DSA -->
+                <div class="track-card terminal-panel glow-green dsa">
+                    <div class="track-icon">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <h3>Algorithms & DSA</h3>
+                    <p>Understand search mechanics, queue configurations, tree traversals, and Big-O computational complex ratio limits.</p>
+                    <a href="tracks.html?subject=dsa" class="btn btn-secondary btn-sm">Load Track</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Hacker Status board -->
+        <section class="hacker-status-panel terminal-panel glow-teal animate-slide">
+            <div class="hacker-status-info">
+                <h3>Developer Profile: ACTIVE</h3>
+                <p>Status parameters parsed from local browser session caches.</p>
+            </div>
+            <div class="status-counters">
+                <div class="counter-box">
+                    <span class="number text-gradient-hacker nav-streak-value">0 Days</span>
+                    <span class="label">Dev Streak</span>
+                </div>
+                <div class="counter-box">
+                    <span class="number" id="stats-topics">0</span>
+                    <span class="label">Tracks Compiled</span>
+                </div>
+                <div class="counter-box">
+                    <span class="number" id="stats-quizzes">0</span>
+                    <span class="label">Quizzes Resolved</span>
+                </div>
+            </div>
+            <div>
+                <a href="progress.html" class="btn btn-primary">Dev Dashboard <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="dev-footer-card">
+                <h3>Suchismita Padhi</h3>
+                <div class="dev-footer-tagline">
+                    STUDENT DEVELOPER | FULL STACK DEVELOPER | CODEVERSE CREATOR 🚀
+                </div>
+                <div class="dev-footer-links">
+                    <a href="https://www.linkedin.com/in/suchismitapadhi89" target="_blank" rel="noopener noreferrer" class="dev-pill-btn linkedin">
+                        <i class="fab fa-linkedin"></i> LinkedIn
+                    </a>
+                    <a href="https://github.com/Suchismitapadhi123" target="_blank" rel="noopener noreferrer" class="dev-pill-btn github">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                    <a href="https://www.instagram.com/khushi143451?igsh=MWluZDZzbW51azEwaA==" target="_blank" rel="noopener noreferrer" class="dev-pill-btn instagram">
+                        <i class="fab fa-instagram"></i> Instagram
+                    </a>
+                    <a href="mailto:suchismitapadhi89@gmail.com" class="dev-pill-btn email">
+                        <i class="fas fa-envelope"></i> suchismitapadhi89@gmail.com
+                    </a>
+                </div>
+                <div class="dev-footer-copy">
+                    &copy; 2026 Suchismita Padhi • Built with ⚡ HTML, CSS & JavaScript • CodeVerse Student Dev Portal
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Shared State Scripts -->
+    <script src="js/app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Wait for app.js state loading
+            setTimeout(() => {
+                const completedCount = devState.completedTopics ? devState.completedTopics.length : 0;
+                document.getElementById('stats-topics').textContent = completedCount;
+
+                let quizzesDone = 0;
+                if (devState.quizScores) {
+                    quizzesDone = Object.values(devState.quizScores).reduce((acc, list) => acc + list.length, 0);
+                }
+                document.getElementById('stats-quizzes').textContent = quizzesDone;
+            }, 100);
+        });
+    </script>
+</body>
+</html>

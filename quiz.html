@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        (function() {
+            let user = '';
+            try {
+                user = sessionStorage.getItem('codeverse_current_user') || window.name;
+            } catch (e) {
+                user = window.name;
+            }
+            if (!user) {
+                window.location.href = 'login.html';
+            }
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CodeVerse - Test your programming capabilities, syntax predictions, and algorithm complexity checks.">
+    <title>Code Quiz Console - CodeVerse</title>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* --- CODE QUIZ PANEL SPECIFIC STYLING --- */
+        .quiz-wrapper {
+            max-width: 800px;
+            margin: 2rem auto;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .setup-panel {
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .setup-panel h2 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            font-family: var(--font-mono);
+        }
+
+        .setup-panel p {
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+        }
+
+        .selector-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+            text-align: left;
+        }
+
+        .select-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+            font-family: var(--font-mono);
+        }
+
+        .custom-select {
+            width: 100%;
+            background: rgba(12, 10, 22, 0.7);
+            border: 1px solid var(--border-neon);
+            color: var(--text-primary);
+            padding: 0.9rem 1.25rem;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2300f2fe' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1.25rem center;
+            background-size: 1rem;
+        }
+
+        .custom-select:focus {
+            border-color: var(--color-teal);
+            box-shadow: var(--glow-teal);
+        }
+
+        /* 2. Active Quiz Console */
+        .quiz-panel {
+            padding: 2.5rem;
+            display: none;
+        }
+
+        .quiz-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-neon);
+            font-family: var(--font-mono);
+        }
+
+        .quiz-progress-text {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .timer-box {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            color: var(--color-amber);
+            font-size: 1rem;
+        }
+
+        .timer-progress-container {
+            width: 100%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.03);
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .timer-progress-bar {
+            height: 100%;
+            width: 100%;
+            background: var(--color-amber);
+            box-shadow: 0 0 8px rgba(255, 170, 0, 0.4);
+            transition: width 1s linear;
+        }
+
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        /* Code block rendering */
+        .code-snippet-box {
+            margin-bottom: 2rem;
+        }
+
+        /* Options list styling */
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .option-item {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border-neon);
+            padding: 1rem 1.4rem;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            transition: var(--transition-fast);
+        }
+
+        .option-item:hover:not(.disabled) {
+            background: rgba(0, 242, 254, 0.04);
+            border-color: var(--color-teal);
+            transform: translateX(4px);
+            box-shadow: var(--glow-teal);
+        }
+
+        .option-badge {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 1.5px solid var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            transition: var(--transition-fast);
+        }
+
+        .option-item:hover:not(.disabled) .option-badge {
+            border-color: var(--text-primary);
+            color: var(--text-primary);
+        }
+
+        /* Correct / Wrong classes override */
+        .option-item.correct {
+            border-color: var(--color-green) !important;
+            background: rgba(0, 255, 135, 0.08) !important;
+            color: var(--color-green);
+        }
+
+        .option-item.correct .option-badge {
+            border-color: var(--color-green);
+            background: var(--color-green);
+            color: var(--bg-terminal);
+        }
+
+        .option-item.wrong {
+            border-color: var(--color-crimson) !important;
+            background: rgba(255, 51, 102, 0.08) !important;
+            color: var(--color-crimson);
+        }
+
+        .option-item.wrong .option-badge {
+            border-color: var(--color-crimson);
+            background: var(--color-crimson);
+            color: white;
+        }
+
+        .option-item.disabled {
+            cursor: not-allowed;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+        /* 3. Results dashboard */
+        .results-panel {
+            padding: 3.5rem 2.5rem;
+            text-align: center;
+            display: none;
+        }
+
+        .score-radial-wrap {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 2rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .score-radial-svg {
+            transform: rotate(-90deg);
+        }
+
+        .score-radial-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.03);
+            stroke-width: 8;
+        }
+
+        .score-radial-fill {
+            fill: none;
+            stroke: var(--color-teal);
+            stroke-width: 8;
+            stroke-dasharray: 440;
+            stroke-dashoffset: 440;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 5px rgba(0, 242, 254, 0.5));
+            transition: stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .score-overlay-val {
+            position: absolute;
+            font-family: var(--font-mono);
+            font-size: 2rem;
+            font-weight: 700;
+            text-shadow: var(--glow-teal);
+        }
+
+        .results-panel h2 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            font-family: var(--font-mono);
+        }
+
+        .results-msg {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 2.5rem;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.5;
+        }
+
+        .results-actions {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        @media (max-width: 600px) {
+            .selector-row {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .results-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="nav-logo">
+                <i class="fas fa-terminal"></i>
+                <span class="text-gradient">CodeVerse</span>
+            </a>
+            
+            <button class="menu-toggle" aria-label="Toggle Navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <ul class="nav-links">
+                <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="tracks.html"><i class="fas fa-code"></i> Tracks</a></li>
+                <li class="active"><a href="quiz.html"><i class="fas fa-gamepad"></i> Code Quiz</a></li>
+                <li><a href="progress.html"><i class="fas fa-project-diagram"></i> Progress</a></li>
+                <li><a href="tutor.html"><i class="fas fa-brain"></i> Code Tutor</a></li>
+                <!-- Streak indicator -->
+                <li>
+                    <div class="nav-streak">
+                        <i class="fas fa-bolt"></i>
+                        <span class="nav-streak-value">0 Days</span>
+                    </div>
+                </li>
+                <li><a href="#" id="btn-logout-session" style="color: var(--color-crimson);"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container">
+
+        <div class="quiz-wrapper">
+            
+            <!-- Quiz Configuration Panel (Step 1) -->
+            <section class="setup-panel terminal-panel glow-teal animate-fade" id="panel-setup">
+                <h2>Initialize Assessment Console</h2>
+                <p>Configure compiler settings, select track language, and set complexity tiers.</p>
+                
+                <div class="selector-row">
+                    <div class="select-group">
+                        <label for="select-track">Coding Track</label>
+                        <select id="select-track" class="custom-select">
+                            <option value="python">Python</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="cpp">C++</option>
+                            <option value="dsa">Algorithms & DSA</option>
+                        </select>
+                    </div>
+                    <div class="select-group">
+                        <label for="select-complexity">Complexity Tier</label>
+                        <select id="select-complexity" class="custom-select">
+                            <option value="easy">Easy (Syntax & Operators)</option>
+                            <option value="medium">Medium (Logical Output)</option>
+                            <option value="hard">Hard (Scope & Big-O)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" id="btn-start-quiz">
+                    <i class="fas fa-play"></i> Compile Assessment
+                </button>
+            </section>
+
+            <!-- Active Quiz Console (Step 2) -->
+            <section class="quiz-panel terminal-panel animate-fade" id="panel-quiz">
+                
+                <div class="quiz-header">
+                    <div class="quiz-progress-text">
+                        Thread <span id="current-q-num">1</span> / <span id="total-q-num">3</span>
+                    </div>
+                    <div class="timer-box">
+                        <i class="far fa-clock"></i>
+                        <span id="quiz-timer">15s</span>
+                    </div>
+                </div>
+
+                <!-- Timer countdown bar -->
+                <div class="timer-progress-container">
+                    <div class="timer-progress-bar" id="timer-bar"></div>
+                </div>
+
+                <!-- Question Text -->
+                <div class="question-text" id="question-text-box">
+                    What is the output of the following block of code?
+                </div>
+
+                <!-- Monospace Code Snippet block -->
+                <div class="code-snippet-box" id="code-snippet-container">
+                    <pre><code id="code-snippet-display"></code></pre>
+                </div>
+
+                <!-- MCQ Options -->
+                <div class="options-list" id="options-list-box">
+                    <!-- Dynamic rendering -->
+                </div>
+
+            </section>
+
+            <!-- Results Dashboard (Step 3) -->
+            <section class="results-panel terminal-panel glow-violet animate-fade" id="panel-results">
+                
+                <!-- Circular score bar -->
+                <div class="score-radial-wrap">
+                    <svg width="150" height="150" class="score-radial-svg">
+                        <circle cx="75" cy="75" r="70" class="score-radial-bg"></circle>
+                        <circle cx="75" cy="75" r="70" class="score-radial-fill" id="results-circle-bar"></circle>
+                    </svg>
+                    <div class="score-overlay-val" id="results-score-text">80%</div>
+                </div>
+
+                <h2 id="results-headline">Execution Complete!</h2>
+                <div class="results-msg" id="results-message-box">
+                    Process exited with code 0. You solved 3 out of 3 questions correctly.
+                </div>
+
+                <div class="results-actions">
+                    <button class="btn btn-primary" id="btn-retry-quiz">
+                        <i class="fas fa-undo"></i> Try Another Compilation
+                    </button>
+                    <a href="progress.html" class="btn btn-secondary">
+                        <i class="fas fa-project-diagram"></i> View Dev Dashboard
+                    </a>
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="dev-footer-card">
+                <h3>Suchismita Padhi</h3>
+                <div class="dev-footer-tagline">
+                    STUDENT DEVELOPER | FULL STACK DEVELOPER | CODEVERSE CREATOR 🚀
+                </div>
+                <div class="dev-footer-links">
+                    <a href="https://www.linkedin.com/in/suchismitapadhi89" target="_blank" rel="noopener noreferrer" class="dev-pill-btn linkedin">
+                        <i class="fab fa-linkedin"></i> LinkedIn
+                    </a>
+                    <a href="https://github.com/Suchismitapadhi123" target="_blank" rel="noopener noreferrer" class="dev-pill-btn github">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                    <a href="https://www.instagram.com/khushi143451?igsh=MWluZDZzbW51azEwaA==" target="_blank" rel="noopener noreferrer" class="dev-pill-btn instagram">
+                        <i class="fab fa-instagram"></i> Instagram
+                    </a>
+                    <a href="mailto:suchismitapadhi89@gmail.com" class="dev-pill-btn email">
+                        <i class="fas fa-envelope"></i> suchismitapadhi89@gmail.com
+                    </a>
+                </div>
+                <div class="dev-footer-copy">
+                    &copy; 2026 Suchismita Padhi • Built with ⚡ HTML, CSS & JavaScript • CodeVerse Student Dev Portal
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/db_questions.js"></script>
+    <script src="js/quiz.js"></script>
+</body>
+</html>

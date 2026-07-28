@@ -1,0 +1,20 @@
+{
+  "name": "codeverse",
+  "version": "1.0.0",
+  "description": "CodeVerse - A multi-page student programming learning portal.",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx http-server -p 8081"
+  },
+  "keywords": [
+    "programming",
+    "portal",
+    "learning",
+    "hacker"
+  ],
+  "author": "CodeVerse Team",
+  "license": "ISC",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}

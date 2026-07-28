@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        (function() {
+            let user = '';
+            try {
+                user = sessionStorage.getItem('codeverse_current_user') || window.name;
+            } catch (e) {
+                user = window.name;
+            }
+            if (!user) {
+                window.location.href = 'login.html';
+            }
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CodeVerse - Coding study tracks loaded dynamically from Wikipedia and Open Library datasets.">
+    <title>Coding Tracks & Bibliography - CodeVerse</title>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- TRACKS WORKSPACE STYLING --- */
+        .tracks-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+            align-items: start;
+        }
+
+        .sidebar {
+            padding: 1.5rem;
+            position: sticky;
+            top: 100px;
+        }
+
+        .sidebar h3 {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-neon);
+        }
+
+        .track-selectors {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .btn-track-tab {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.8rem 1rem;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid transparent;
+            cursor: pointer;
+            text-align: left;
+            font-family: var(--font-mono);
+            font-weight: 500;
+            font-size: 0.85rem;
+            transition: var(--transition-fast);
+        }
+
+        .btn-track-tab:hover {
+            background: rgba(0, 242, 254, 0.03);
+            color: var(--text-primary);
+        }
+
+        .btn-track-tab.active {
+            background: rgba(0, 242, 254, 0.08);
+            border-color: rgba(0, 242, 254, 0.25);
+            color: var(--color-teal);
+            font-weight: 600;
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.05);
+        }
+
+        .topics-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            list-style: none;
+            font-family: var(--font-mono);
+        }
+
+        .topics-list li a {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.65rem 0.85rem;
+            border-radius: 4px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: var(--transition-fast);
+            border: 1px solid transparent;
+        }
+
+        .topics-list li a:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-primary);
+        }
+
+        .topics-list li.active a {
+            background: rgba(0, 242, 254, 0.05);
+            color: var(--text-primary);
+            border-color: rgba(0, 242, 254, 0.15);
+        }
+
+        .topics-list li a i.completed-check {
+            font-size: 0.75rem;
+            color: var(--color-green);
+            opacity: 0;
+            transition: var(--transition-fast);
+        }
+
+        .topics-list li.completed a i.completed-check {
+            opacity: 1;
+        }
+
+        /* Console Viewer */
+        .console-viewer {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            min-height: 500px;
+        }
+
+        .viewer-header {
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .viewer-header-info span {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .viewer-header-info h2 {
+            font-family: var(--font-mono);
+            font-size: 1.7rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Note contents terminal box */
+        .notes-content-box {
+            padding: 2.5rem;
+            min-height: 250px;
+            position: relative;
+        }
+
+        .notes-para {
+            font-size: 1.05rem;
+            line-height: 1.7;
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .notes-source-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--color-teal);
+            text-decoration: none;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-top: 1rem;
+            transition: var(--transition-fast);
+        }
+
+        .notes-source-link:hover {
+            text-shadow: var(--glow-teal);
+            text-decoration: underline;
+        }
+
+        /* Recommended textbooks section */
+        .books-section {
+            padding: 2rem;
+        }
+
+        .books-section h3 {
+            font-family: var(--font-mono);
+            font-size: 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .books-section h3 i {
+            color: var(--color-violet);
+        }
+
+        .books-carousel {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .book-card {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border-neon);
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: var(--transition-fast);
+        }
+
+        .book-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--color-teal);
+            transform: translateY(-4px);
+            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.05);
+        }
+
+        .book-cover {
+            width: 100px;
+            height: 145px;
+            background: #0f0d1a;
+            border-radius: 4px;
+            object-fit: cover;
+            margin-bottom: 0.85rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .book-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            height: 2.5rem;
+        }
+
+        .book-author {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+
+        /* Loaders and Spinners */
+        .loader-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 3rem 0;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+        }
+
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(0, 242, 254, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--color-teal);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 900px) {
+            .tracks-container {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                position: static;
+            }
+            .track-selectors {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .btn-track-tab {
+                flex: 1;
+                min-width: 130px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="nav-logo">
+                <i class="fas fa-terminal"></i>
+                <span class="text-gradient">CodeVerse</span>
+            </a>
+            
+            <button class="menu-toggle" aria-label="Toggle Navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <ul class="nav-links">
+                <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
+                <li class="active"><a href="tracks.html"><i class="fas fa-code"></i> Tracks</a></li>
+                <li><a href="flashcards.html"><i class="fas fa-layer-group"></i> Flashcards</a></li>
+                <li><a href="quiz.html"><i class="fas fa-gamepad"></i> Code Quiz</a></li>
+                <li><a href="progress.html"><i class="fas fa-project-diagram"></i> Progress</a></li>
+                <li><a href="tutor.html"><i class="fas fa-brain"></i> Code Tutor</a></li>
+                <!-- Streak indicator -->
+                <li>
+                    <div class="nav-streak">
+                        <i class="fas fa-bolt"></i>
+                        <span class="nav-streak-value">0 Days</span>
+                    </div>
+                </li>
+                <li><a href="#" id="btn-logout-session" style="color: var(--color-crimson);"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container">
+
+        <div class="tracks-container">
+            
+            <!-- Sidebar Selection (Left Column) -->
+            <aside class="sidebar terminal-panel animate-fade">
+                <h3>Select Track</h3>
+                <div class="track-selectors">
+                    <button class="btn-track-tab active" data-track="python">
+                        <i class="fab fa-python" style="color: var(--color-teal);"></i> Python
+                    </button>
+                    <button class="btn-track-tab" data-track="javascript">
+                        <i class="fab fa-js-square" style="color: var(--color-amber);"></i> JavaScript
+                    </button>
+                    <button class="btn-track-tab" data-track="cpp">
+                        <i class="fas fa-code" style="color: var(--color-violet);"></i> C++
+                    </button>
+                    <button class="btn-track-tab" data-track="dsa">
+                        <i class="fas fa-network-wired" style="color: var(--color-green);"></i> DSA
+                    </button>
+                </div>
+
+                <h3>Topics</h3>
+                <ul class="topics-list" id="topics-list-container">
+                    <!-- Dynamic rendering -->
+                </ul>
+            </aside>
+
+            <!-- Console Viewer (Right Column) -->
+            <section class="console-viewer animate-slide">
+                
+                <!-- Viewer Header -->
+                <div class="viewer-header terminal-panel">
+                    <div class="viewer-header-info">
+                        <span id="track-subject-label">Subject Label</span>
+                        <h2 id="track-title-display">Topic Title</h2>
+                    </div>
+                    <button id="btn-complete-topic" class="btn btn-secondary">
+                        <i class="far fa-circle"></i> Mark as Compiled
+                    </button>
+                </div>
+
+                <!-- Tabs to select Wiki / PDF Notes -->
+                <div class="notes-tabs" style="display: flex; gap: 0.5rem; margin-top: 1rem; border-bottom: 1px solid var(--border-neon);">
+                    <button id="btn-tab-wiki" class="btn-tab active" style="font-family: var(--font-mono); font-size: 0.85rem; padding: 0.6rem 1.2rem; background: rgba(0, 242, 254, 0.05); border: 1px solid var(--border-neon); border-bottom: none; border-radius: 4px 4px 0 0; color: var(--color-teal); cursor: pointer; transition: var(--transition-fast); outline: none;">
+                        <i class="fas fa-globe"></i> Interactive Docs
+                    </button>
+                    <button id="btn-tab-pdf" class="btn-tab" style="font-family: var(--font-mono); font-size: 0.85rem; padding: 0.6rem 1.2rem; background: transparent; border: 1px solid transparent; border-bottom: none; border-radius: 4px 4px 0 0; color: var(--text-muted); cursor: pointer; transition: var(--transition-fast); outline: none;">
+                        <i class="fas fa-file-pdf"></i> Original PDF Handbook
+                    </button>
+                </div>
+
+                <!-- Notes summary terminal box -->
+                <div class="notes-content-box terminal-panel" id="notes-content-box">
+                    <div class="notes-text" id="notes-text-container">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+                <!-- PDF Viewer box -->
+                <div class="pdf-viewer-box terminal-panel" id="pdf-viewer-box" style="display: none; padding: 1.5rem; flex-direction: column; gap: 1rem; min-height: 500px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.75rem;">
+                        <span id="pdf-file-label" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--color-teal);"><i class="fas fa-file-pdf"></i> Loading...</span>
+                        <a id="btn-download-pdf" href="" download class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; font-family: var(--font-mono); display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none;">
+                            <i class="fas fa-download"></i> Download Notes
+                        </a>
+                    </div>
+                    <div style="flex: 1; border: 1px solid var(--border-neon); border-radius: 4px; overflow: hidden; background: #0c0a16; position: relative;">
+                        <iframe id="pdf-iframe" src="" style="width: 100%; height: 600px; border: none;"></iframe>
+                    </div>
+                </div>
+
+                <!-- Recommended books -->
+                <div class="books-section terminal-panel">
+                    <h3><i class="fas fa-book"></i> Recommended Bibliography Resources</h3>
+                    <div class="books-carousel" id="books-carousel-container">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+
+            </section>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="dev-footer-card">
+                <h3>Suchismita Padhi</h3>
+                <div class="dev-footer-tagline">
+                    STUDENT DEVELOPER | FULL STACK DEVELOPER | CODEVERSE CREATOR 🚀
+                </div>
+                <div class="dev-footer-links">
+                    <a href="https://www.linkedin.com/in/suchismitapadhi89" target="_blank" rel="noopener noreferrer" class="dev-pill-btn linkedin">
+                        <i class="fab fa-linkedin"></i> LinkedIn
+                    </a>
+                    <a href="https://github.com/Suchismitapadhi123" target="_blank" rel="noopener noreferrer" class="dev-pill-btn github">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                    <a href="https://www.instagram.com/khushi143451?igsh=MWluZDZzbW51azEwaA==" target="_blank" rel="noopener noreferrer" class="dev-pill-btn instagram">
+                        <i class="fab fa-instagram"></i> Instagram
+                    </a>
+                    <a href="mailto:suchismitapadhi89@gmail.com" class="dev-pill-btn email">
+                        <i class="fas fa-envelope"></i> suchismitapadhi89@gmail.com
+                    </a>
+                </div>
+                <div class="dev-footer-copy">
+                    &copy; 2026 Suchismita Padhi • Built with ⚡ HTML, CSS & JavaScript • CodeVerse Student Dev Portal
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/tracks.js"></script>
+</body>
+</html>

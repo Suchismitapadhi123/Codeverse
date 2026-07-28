@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        (function() {
+            let user = '';
+            try {
+                user = sessionStorage.getItem('codeverse_current_user') || window.name;
+            } catch (e) {
+                user = window.name;
+            }
+            if (!user) {
+                window.location.href = 'login.html';
+            }
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CodeVerse - 3D programming flashcards deck for interactive memorization of Python, JS, C++, and DSA concepts.">
+    <title>Developer Flashcards - CodeVerse</title>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- 3D FLASHCARDS SPECIFIC STYLING --- */
+        .flashcards-layout {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 2rem;
+            gap: 2rem;
+        }
+
+        .category-tabs-row {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .btn-category-tab {
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border-neon);
+            color: var(--text-secondary);
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .btn-category-tab:hover {
+            background: rgba(0, 242, 254, 0.04);
+            color: var(--text-primary);
+        }
+
+        .btn-category-tab.active {
+            background: rgba(0, 242, 254, 0.08);
+            border-color: var(--color-teal);
+            color: var(--color-teal);
+            box-shadow: var(--glow-teal);
+        }
+
+        /* 3D card viewport */
+        .card-viewport {
+            width: 550px;
+            height: 340px;
+            perspective: 1000px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Rotated state class */
+        .card-viewport.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-side {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            padding: 2.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: var(--shadow-terminal);
+        }
+
+        /* Front details - Cyan neon */
+        .card-side.front {
+            background: rgba(12, 10, 22, 0.75);
+            border: 2px solid var(--color-teal);
+            box-shadow: var(--glow-teal);
+            color: var(--text-primary);
+            align-items: center;
+            text-align: center;
+        }
+
+        .card-side.front h3 {
+            font-family: var(--font-mono);
+            font-size: 1.4rem;
+            line-height: 1.5;
+        }
+
+        .card-side.front .tip {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            margin-top: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Back details - Green neon */
+        .card-side.back {
+            background: rgba(8, 12, 18, 0.85);
+            border: 2px solid var(--color-green);
+            box-shadow: var(--glow-green);
+            color: var(--text-primary);
+            transform: rotateY(180deg);
+            text-align: left;
+            overflow-y: auto;
+        }
+
+        .card-side.back h4 {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            color: var(--color-green);
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(0, 255, 135, 0.15);
+            padding-bottom: 0.25rem;
+        }
+
+        .card-side.back p {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        /* Controllers Toolbar */
+        .controls-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-ctrl {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-neon);
+            color: var(--text-primary);
+            width: 44px;
+            height: 44px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .btn-ctrl:hover {
+            border-color: var(--color-teal);
+            box-shadow: var(--glow-teal);
+            color: var(--color-teal);
+        }
+
+        .deck-progress-text {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            min-width: 90px;
+            text-align: center;
+        }
+
+        /* Mastered button toggler */
+        .btn-mastered {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-neon);
+            transition: var(--transition-fast);
+        }
+
+        .btn-mastered.active {
+            background: rgba(0, 255, 135, 0.08);
+            border-color: var(--color-green);
+            color: var(--color-green);
+            box-shadow: var(--glow-green);
+        }
+
+        .hotkeys-helper {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .hotkeys-helper kbd {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-neon);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 600px) {
+            .card-viewport {
+                width: 95vw;
+                height: 300px;
+            }
+            .controls-toolbar {
+                flex-direction: column;
+                gap: 1rem;
+                width: 100%;
+            }
+            .btn-mastered {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="nav-logo">
+                <i class="fas fa-terminal"></i>
+                <span class="text-gradient">CodeVerse</span>
+            </a>
+            
+            <button class="menu-toggle" aria-label="Toggle Navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <ul class="nav-links">
+                <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="tracks.html"><i class="fas fa-code"></i> Tracks</a></li>
+                <!-- New Flashcard page active in navbar -->
+                <li class="active"><a href="flashcards.html"><i class="fas fa-layer-group"></i> Flashcards</a></li>
+                <li><a href="quiz.html"><i class="fas fa-gamepad"></i> Code Quiz</a></li>
+                <li><a href="progress.html"><i class="fas fa-project-diagram"></i> Progress</a></li>
+                <li><a href="tutor.html"><i class="fas fa-brain"></i> Code Tutor</a></li>
+                <!-- Streak indicator -->
+                <li>
+                    <div class="nav-streak">
+                        <i class="fas fa-bolt"></i>
+                        <span class="nav-streak-value">0 Days</span>
+                    </div>
+                </li>
+                <li><a href="#" id="btn-logout-session" style="color: var(--color-crimson);"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container">
+
+        <div class="flashcards-layout">
+            
+            <!-- Category Tabs Selector -->
+            <div class="category-tabs-row">
+                <button class="btn-category-tab active" data-track="python">Python</button>
+                <button class="btn-category-tab" data-track="javascript">JavaScript</button>
+                <button class="btn-category-tab" data-track="cpp">C++</button>
+                <button class="btn-category-tab" data-track="dsa">Algorithms & DSA</button>
+            </div>
+
+            <!-- 3D Card Viewport -->
+            <div class="card-viewport" id="flashcard-viewport">
+                <div class="card-inner">
+                    
+                    <!-- Front side -->
+                    <div class="card-side front">
+                        <h3 id="card-front-text">Concept Question</h3>
+                        <div class="tip">Click or Press SPACE to flip</div>
+                    </div>
+
+                    <!-- Back side -->
+                    <div class="card-side back">
+                        <h4>Compiler Explanation</h4>
+                        <div id="card-back-text">Details and code parameters.</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Controller Toolbar -->
+            <div class="controls-toolbar">
+                <button class="btn-ctrl" id="btn-prev-card" title="Previous Card (Left Arrow)">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                
+                <button class="btn-ctrl" id="btn-shuffle-deck" title="Shuffle Deck">
+                    <i class="fas fa-random"></i>
+                </button>
+
+                <div class="deck-progress-text" id="deck-progress-text">Card 1 / 25</div>
+
+                <button class="btn-mastered" id="btn-toggle-mastered">
+                    <i class="far fa-check-circle"></i> Mark as Mastered
+                </button>
+
+                <button class="btn-ctrl" id="btn-next-card" title="Next Card (Right Arrow)">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Hotkeys Helper Legend -->
+            <div class="hotkeys-helper">
+                <span><kbd>Space</kbd> Flip Card</span>
+                <span><kbd>&larr;</kbd> Previous</span>
+                <span><kbd>&rarr;</kbd> Next</span>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="dev-footer-card">
+                <h3>Suchismita Padhi</h3>
+                <div class="dev-footer-tagline">
+                    STUDENT DEVELOPER | FULL STACK DEVELOPER | CODEVERSE CREATOR 🚀
+                </div>
+                <div class="dev-footer-links">
+                    <a href="https://www.linkedin.com/in/suchismitapadhi89" target="_blank" rel="noopener noreferrer" class="dev-pill-btn linkedin">
+                        <i class="fab fa-linkedin"></i> LinkedIn
+                    </a>
+                    <a href="https://github.com/Suchismitapadhi123" target="_blank" rel="noopener noreferrer" class="dev-pill-btn github">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                    <a href="https://www.instagram.com/khushi143451?igsh=MWluZDZzbW51azEwaA==" target="_blank" rel="noopener noreferrer" class="dev-pill-btn instagram">
+                        <i class="fab fa-instagram"></i> Instagram
+                    </a>
+                    <a href="mailto:suchismitapadhi89@gmail.com" class="dev-pill-btn email">
+                        <i class="fas fa-envelope"></i> suchismitapadhi89@gmail.com
+                    </a>
+                </div>
+                <div class="dev-footer-copy">
+                    &copy; 2026 Suchismita Padhi • Built with ⚡ HTML, CSS & JavaScript • CodeVerse Student Dev Portal
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/db_flashcards.js"></script>
+    <script src="js/flashcards.js"></script>
+</body>
+</html>

@@ -1,0 +1,194 @@
+--- Page 1 ---
+C++ Cheatsheet
+Basics
+Boilerplate
+Input/Output
+Output (cout <<) – Prints to console
+Input (cin >>) – Takes user input
+Data Types
+C++ supports several data types, divided into categories:
+#include <iostream>
+using namespace std;
+int main(){
+    cout <<"Welcome To CodeWithHarry";
+return0;
+}
+• 
+• 
+string name;
+cout <<"Enter name: ";
+cin >> name;
+cout <<"Hello, "<< name;
+--- Page 2 ---
+Type Example Size (Typical) Description
+char char c='A'; 1 byte Stores single character
+int int x=10; 4 bytes Integer numbers
+shor
+t short s=100; 2 bytes Small integer
+long long l=100000;4-8 bytes Large integer
+floa
+t float f=10.5; 4 bytes Single-precision decimal
+doub
+le
+double 
+d=10.55; 8 bytes Double-precision decimal
+bool bool 
+flag=true; 1 byte True/False values
+void – – Represents no value
+Escape Sequences
+Sequence Meaning
+\a Alert (beep)
+\b Backspace
+\f Form feed
+\n Newline
+\r Carriage return
+\t Horizontal tab
+\\ Backslash
+\' Single quote
+--- Page 3 ---
+Sequence Meaning
+\" Double quote
+\? Question mark
+\0 Null terminator
+\nnn Octal value
+\xhh Hexadecimal value
+Comments
+Strings
+// Single-line comment
+/* Multi-line
+   comment */
+#include <string>
+string s1 ="Hello";
+string s2 ="World";
+// Concatenation
+string s3 = s1 +" "+ s2;
+// Append
+s1.append(s2);
+// Length
+cout << s3.length();
+--- Page 4 ---
+Math Functions (<cmath>)
+Function Example Result
+max(a,b) max(5,10) 10
+min(a,b) min(5,10) 5
+sqrt(x) sqrt(144) 12
+ceil(x) ceil(1.9) 2
+floor(x) floor(1.9) 1
+pow(x,y) pow(2,3) 8
+abs(x) abs(-5) 5
+round(x) round(2.6) 3
+Decision Making
+// Access/modify
+s3[0]='h';
+if(x >0){...}
+elseif(x ==0){...}
+else{...}
+// Ternary
+int result =(x >0) ? 1:-1;
+// Switch
+switch (choice){
+case1: cout <<"One";break;
+case2: cout <<"Two";break;
+--- Page 5 ---
+Loops
+References
+    default: cout <<"Other";
+}
+// While loop
+while(i <5){ i++;}
+// Do-while loop
+do { i++;}while(i <5);
+// For loop
+for(int i=0; i<5; i++){...}
+// Break/Continue
+break; // exits loop
+continue; // skips current iteration
+int a =10;
+int&ref = a;
+ref =20;// a becomes 20
+--- Page 6 ---
+Pointers
+nullptr is used for null pointers in C++11+
+Use -> operator to access members of objects through pointers
+Functions & Recursion
+Object-Oriented Programming
+Class & Object
+int x =10;
+int*ptr =&x; // Pointer to x
+cout <<*ptr; // Dereference (prints 10)
+• 
+• 
+int add(int a,int b){
+return a + b;
+}
+// Recursion
+int factorial(int n){
+if(n <=1)return1;
+return n * factorial(n-1);
+}
+classCar{
+public:
+    string brand;
+int year;
+    void drive(){ cout <<"Driving";}
+};
+--- Page 7 ---
+Constructor
+Inheritance
+Polymorphism (Virtual Functions)
+Car c1;
+c1.brand ="BMW";
+c1.drive();
+classCar{
+public:
+    Car(string b,int y){
+        brand = b;
+        year = y;
+}
+    string brand;
+int year;
+};
+Car c("Audi",2023);
+classVehicle{
+public:
+    void honk(){ cout <<"Beep!";}
+};
+classCar: public Vehicle {};
+Car obj;
+obj.honk();// Inherited method
+classAnimal{ public: virtual void sound(){ cout<<"Some sound";}};
+classDog: public Animal { public: void sound() override { cout<<"Bark";}};
+Animal* a = new Dog();
+a->sound();// Bark
+--- Page 8 ---
+File Handling
+Modes:ios::in, ios::out, ios::app, ios::binary, ios::ate, 
+ios::trunc
+Exception Handling
+Additional Key Concepts
+Namespaces: Avoids name conflicts
+Templates: Generic programming
+#include <fstream>
+ofstream myFile("test.txt"); // write
+myFile <<"Hello";
+myFile.close();
+ifstream readFile("test.txt"); // read
+string line;
+while(getline(readFile, line)){ cout << line;}
+readFile.close();
+• 
+try{
+    throw runtime_error("Error occurred");
+}
+catch (exception &e){
+    cout <<"Caught: "<< e.what();
+}
+• 
+namespace A {int x =10;}
+cout << A::x;
+• 
+--- Page 9 ---
+STL (Standard Template Library):vector, map, set, stack, etc.
+template <typename T>
+T add(T a, T b){return a + b;}
+• 

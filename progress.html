@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>
+        (function() {
+            let user = '';
+            try {
+                user = sessionStorage.getItem('codeverse_current_user') || window.name;
+            } catch (e) {
+                user = window.name;
+            }
+            if (!user) {
+                window.location.href = 'login.html';
+            }
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="CodeVerse - Developer metrics dashboard, streaks tracking, and compiler achievement badges.">
+    <title>Progress & achievements - CodeVerse</title>
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- PROGRESS DASHBOARD STYLING --- */
+        .progress-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .stats-summary-card {
+            padding: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .streak-bolt-wrapper {
+            font-size: 3.5rem;
+            color: var(--color-green);
+            animation: neonPulse 2s infinite alternate;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 255, 135, 0.05);
+            border: 1px solid rgba(0, 255, 135, 0.2);
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 255, 135, 0.1);
+        }
+
+        .streak-info h3 {
+            font-family: var(--font-mono);
+            font-size: 2.2rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .streak-info p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* 2. Gauges */
+        .completion-panel {
+            padding: 2.5rem;
+        }
+
+        .completion-panel h2,
+        .quiz-analytics-panel h2,
+        .badges-panel h2 {
+            font-family: var(--font-mono);
+            font-size: 1.35rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .completion-gauges-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+        }
+
+        .gauge-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .gauge-svg-wrap {
+            position: relative;
+            width: 90px;
+            height: 90px;
+            margin-bottom: 0.75rem;
+        }
+
+        .gauge-circle-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.02);
+            stroke-width: 6;
+        }
+
+        .gauge-circle-fill {
+            fill: none;
+            stroke-width: 6;
+            stroke-dasharray: 251; /* 2 * PI * 40 */
+            stroke-dashoffset: 251;
+            stroke-linecap: round;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            transition: stroke-dashoffset 1s ease-in-out;
+        }
+
+        .gauge-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-mono);
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        .gauge-label {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        /* 3. Bar Chart */
+        .quiz-analytics-panel {
+            padding: 2.5rem;
+        }
+
+        .chart-container {
+            height: 190px;
+            display: flex;
+            align-items: flex-end;
+            gap: 2rem;
+            padding: 1.5rem 1rem 0.5rem 1rem;
+            border-bottom: 2px solid var(--border-neon);
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .chart-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: flex-end;
+            position: relative;
+        }
+
+        .chart-bar-fill {
+            width: 28px;
+            background: var(--grad-terminal);
+            border-radius: 4px 4px 0 0;
+            height: 0%; /* JS controlled */
+            transition: height 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+            position: relative;
+        }
+
+        .chart-bar-value {
+            position: absolute;
+            top: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .chart-label {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.75rem;
+            text-align: center;
+        }
+
+        /* 4. Achievements panel */
+        .badges-panel {
+            grid-column: span 2;
+            padding: 2.5rem;
+        }
+
+        .badges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+
+        .badge-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: var(--transition-fast);
+            position: relative;
+        }
+
+        .badge-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.01);
+            border: 1px solid var(--border-neon);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            transition: var(--transition-fast);
+        }
+
+        .badge-name {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            margin-bottom: 0.2rem;
+        }
+
+        .badge-desc {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            line-height: 1.3;
+        }
+
+        /* Locked / Unlocked States */
+        .badge-box.locked {
+            opacity: 0.4;
+        }
+
+        .badge-box.locked .badge-icon {
+            filter: grayscale(1);
+            color: var(--text-muted) !important;
+            border: 1px dashed var(--border-neon);
+        }
+
+        .badge-box.locked::after {
+            content: '\f023'; /* lock */
+            font-family: 'Font Awesome 5 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 0;
+            right: 25px;
+            background: var(--bg-terminal);
+            border: 1px solid var(--border-neon);
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .badge-box.unlocked:hover {
+            transform: translateY(-5px);
+        }
+
+        .badge-box.unlocked:hover .badge-icon {
+            transform: scale(1.08) rotate(-5deg);
+        }
+
+        /* Glowing effects */
+        .badge-box.unlocked .badge-icon {
+            background: rgba(0, 242, 254, 0.05);
+            border-color: rgba(0, 242, 254, 0.3);
+            box-shadow: var(--glow-teal);
+        }
+
+        .badge-box.unlocked.python .badge-icon {
+            color: var(--color-teal);
+            background: rgba(0, 242, 254, 0.08);
+            border-color: rgba(0, 242, 254, 0.3);
+            box-shadow: var(--glow-teal);
+        }
+
+        .badge-box.unlocked.js .badge-icon {
+            color: var(--color-amber);
+            background: rgba(255, 170, 0, 0.08);
+            border-color: rgba(255, 170, 0, 0.3);
+            box-shadow: var(--glow-amber);
+        }
+
+        .badge-box.unlocked.cpp .badge-icon {
+            color: var(--color-violet);
+            background: rgba(157, 78, 237, 0.08);
+            border-color: rgba(157, 78, 237, 0.3);
+            box-shadow: var(--glow-violet);
+        }
+
+        .badge-box.unlocked.dsa .badge-icon {
+            color: var(--color-green);
+            background: rgba(0, 255, 135, 0.08);
+            border-color: rgba(0, 255, 135, 0.3);
+            box-shadow: var(--glow-green);
+        }
+
+        /* Reset box */
+        .reset-wrapper {
+            grid-column: span 2;
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .btn-reset {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-decoration: underline;
+            transition: var(--transition-fast);
+        }
+
+        .btn-reset:hover {
+            color: var(--color-crimson);
+        }
+
+        @media (max-width: 900px) {
+            .progress-grid {
+                grid-template-columns: 1fr;
+            }
+            .badges-panel,
+            .reset-wrapper {
+                grid-column: span 1;
+            }
+            .chart-container {
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="nav-logo">
+                <i class="fas fa-terminal"></i>
+                <span class="text-gradient">CodeVerse</span>
+            </a>
+            
+            <button class="menu-toggle" aria-label="Toggle Navigation">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <ul class="nav-links">
+                <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="tracks.html"><i class="fas fa-code"></i> Tracks</a></li>
+                <li><a href="flashcards.html"><i class="fas fa-layer-group"></i> Flashcards</a></li>
+                <li><a href="quiz.html"><i class="fas fa-gamepad"></i> Code Quiz</a></li>
+                <li class="active"><a href="progress.html"><i class="fas fa-project-diagram"></i> Progress</a></li>
+                <li><a href="tutor.html"><i class="fas fa-brain"></i> Code Tutor</a></li>
+                <!-- Streak indicator -->
+                <li>
+                    <div class="nav-streak">
+                        <i class="fas fa-bolt"></i>
+                        <span class="nav-streak-value">0 Days</span>
+                    </div>
+                </li>
+                <li><a href="#" id="btn-logout-session" style="color: var(--color-crimson);"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container">
+
+        <!-- Stats Top Summary Cards -->
+        <div class="stats-summary-row" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
+            
+            <!-- Streak Commits box -->
+            <section class="stats-summary-card terminal-panel glow-teal animate-fade" style="margin-bottom: 0;">
+                <div class="streak-bolt-wrapper">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <div class="streak-info">
+                    <h3 id="streak-days-display">0 Days</h3>
+                    <p>Current active Developer commits streak. Compile coding syllabus tracks or take a code quiz daily to keep your streak burning!</p>
+                </div>
+            </section>
+
+            <!-- Compiled Chapters box -->
+            <section class="stats-summary-card terminal-panel glow-green animate-fade" style="margin-bottom: 0;">
+                <div class="streak-bolt-wrapper" style="color:var(--color-violet); background:rgba(157,78,237,0.05); border-color:rgba(157,78,237,0.2); box-shadow:var(--glow-violet);">
+                    <i class="fas fa-file-code"></i>
+                </div>
+                <div class="streak-info">
+                    <h3 id="topics-read-display">0 Topics</h3>
+                    <p>Total code track sub-chapters reviewed. Completing all modules in a track unlocks specialized developer badges.</p>
+                </div>
+            </section>
+
+            <!-- Flashcards Mastered box -->
+            <section class="stats-summary-card terminal-panel glow-teal animate-fade" style="margin-bottom: 0;">
+                <div class="streak-bolt-wrapper" style="color:var(--color-teal); background:rgba(0,242,254,0.05); border-color:rgba(0,242,254,0.2); box-shadow:var(--glow-teal);">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="streak-info">
+                    <h3 id="flashcards-mastered-display">0 Cards</h3>
+                    <p>Total programming concepts and code snippets marked as Mastered. Flip flashcards regularly to build active recall.</p>
+                </div>
+            </section>
+
+        </div>
+
+        <div class="progress-grid">
+
+            <!-- Circular Track completion panels -->
+            <section class="completion-panel terminal-panel glow-violet animate-slide">
+                <h2><i class="fas fa-chart-bar" style="color: var(--color-violet);"></i> Track Completions</h2>
+                
+                <div class="completion-gauges-grid">
+                    <!-- Python -->
+                    <div class="gauge-item">
+                        <div class="gauge-svg-wrap">
+                            <svg width="90" height="90">
+                                <circle cx="45" cy="45" r="40" class="gauge-circle-bg"></circle>
+                                <circle cx="45" cy="45" r="40" class="gauge-circle-fill" id="gauge-fill-python" style="stroke: var(--color-teal);"></circle>
+                            </svg>
+                            <div class="gauge-text" id="gauge-val-python">0%</div>
+                        </div>
+                        <div class="gauge-label">Python</div>
+                    </div>
+
+                    <!-- JS -->
+                    <div class="gauge-item">
+                        <div class="gauge-svg-wrap">
+                            <svg width="90" height="90">
+                                <circle cx="45" cy="45" r="40" class="gauge-circle-bg"></circle>
+                                <circle cx="45" cy="45" r="40" class="gauge-circle-fill" id="gauge-fill-javascript" style="stroke: var(--color-amber);"></circle>
+                            </svg>
+                            <div class="gauge-text" id="gauge-val-javascript">0%</div>
+                        </div>
+                        <div class="gauge-label">JavaScript</div>
+                    </div>
+
+                    <!-- C++ -->
+                    <div class="gauge-item">
+                        <div class="gauge-svg-wrap">
+                            <svg width="90" height="90">
+                                <circle cx="45" cy="45" r="40" class="gauge-circle-bg"></circle>
+                                <circle cx="45" cy="45" r="40" class="gauge-circle-fill" id="gauge-fill-cpp" style="stroke: var(--color-violet);"></circle>
+                            </svg>
+                            <div class="gauge-text" id="gauge-val-cpp">0%</div>
+                        </div>
+                        <div class="gauge-label">C++</div>
+                    </div>
+
+                    <!-- DSA -->
+                    <div class="gauge-item">
+                        <div class="gauge-svg-wrap">
+                            <svg width="90" height="90">
+                                <circle cx="45" cy="45" r="40" class="gauge-circle-bg"></circle>
+                                <circle cx="45" cy="45" r="40" class="gauge-circle-fill" id="gauge-fill-dsa" style="stroke: var(--color-green);"></circle>
+                            </svg>
+                            <div class="gauge-text" id="gauge-val-dsa">0%</div>
+                        </div>
+                        <div class="gauge-label">DSA</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Column bar quiz scores chart -->
+            <section class="quiz-analytics-panel terminal-panel glow-green animate-slide">
+                <h2><i class="fas fa-poll" style="color: var(--color-green);"></i> Quizzes Diagnostics</h2>
+                
+                <div class="chart-container" id="chart-container-box">
+                    <!-- Python -->
+                    <div class="chart-column">
+                        <div class="chart-bar-fill" id="chart-bar-python" style="background: var(--color-teal); height: 0%;">
+                            <span class="chart-bar-value" id="chart-val-python">--</span>
+                        </div>
+                        <span class="chart-label">Python</span>
+                    </div>
+
+                    <!-- JS -->
+                    <div class="chart-column">
+                        <div class="chart-bar-fill" id="chart-bar-javascript" style="background: var(--color-amber); height: 0%;">
+                            <span class="chart-bar-value" id="chart-val-javascript">--</span>
+                        </div>
+                        <span class="chart-label">JS</span>
+                    </div>
+
+                    <!-- C++ -->
+                    <div class="chart-column">
+                        <div class="chart-bar-fill" id="chart-bar-cpp" style="background: var(--color-violet); height: 0%;">
+                            <span class="chart-bar-value" id="chart-val-cpp">--</span>
+                        </div>
+                        <span class="chart-label">C++</span>
+                    </div>
+
+                    <!-- DSA -->
+                    <div class="chart-column">
+                        <div class="chart-bar-fill" id="chart-bar-dsa" style="background: var(--color-green); height: 0%;">
+                            <span class="chart-bar-value" id="chart-val-dsa">--</span>
+                        </div>
+                        <span class="chart-label">DSA</span>
+                    </div>
+                </div>
+                
+                <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; font-family: var(--font-mono);">
+                    Average score % of resolved code prediction quizzes.
+                </p>
+            </section>
+
+            <!-- Developer Achievements Showcase -->
+            <section class="badges-panel terminal-panel animate-slide">
+                <h2><i class="fas fa-trophy" style="color: var(--color-amber);"></i> Unlocked Compiler Profiles</h2>
+                
+                <div class="badges-grid">
+                    <!-- First compile -->
+                    <div class="badge-box locked" id="badge-first_compile">
+                        <div class="badge-icon"><i class="fas fa-code-branch"></i></div>
+                        <span class="badge-name">First Compile</span>
+                        <span class="badge-desc">Review any 1 language topic</span>
+                    </div>
+
+                    <!-- Code compiled -->
+                    <div class="badge-box locked" id="badge-code_compiled">
+                        <div class="badge-icon"><i class="fas fa-cogs"></i></div>
+                        <span class="badge-name">Code Compiled</span>
+                        <span class="badge-desc">Review at least 5 language topics</span>
+                    </div>
+
+                    <!-- Python Compiler -->
+                    <div class="badge-box locked python" id="badge-python_hacker">
+                        <div class="badge-icon"><i class="fab fa-python"></i></div>
+                        <span class="badge-name">Python Compiler</span>
+                        <span class="badge-desc">Complete the entire Python Track</span>
+                    </div>
+
+                    <!-- Async Master -->
+                    <div class="badge-box locked js" id="badge-javascript_hacker">
+                        <div class="badge-icon"><i class="fab fa-js-square"></i></div>
+                        <span class="badge-name">Async Master</span>
+                        <span class="badge-desc">Complete the JavaScript Track</span>
+                    </div>
+
+                    <!-- Systems Engineer -->
+                    <div class="badge-box locked cpp" id="badge-cpp_hacker">
+                        <div class="badge-icon"><i class="fas fa-code"></i></div>
+                        <span class="badge-name">Systems Engineer</span>
+                        <span class="badge-desc">Complete the C++ Track</span>
+                    </div>
+
+                    <!-- Algorithm Guru -->
+                    <div class="badge-box locked dsa" id="badge-dsa_hacker">
+                        <div class="badge-icon"><i class="fas fa-network-wired"></i></div>
+                        <span class="badge-name">Algorithm Guru</span>
+                        <span class="badge-desc">Complete the Algorithms & DSA Track</span>
+                    </div>
+
+                    <!-- Compile Success -->
+                    <div class="badge-box locked" id="badge-perfect_compile">
+                        <div class="badge-icon"><i class="fas fa-shield-alt"></i></div>
+                        <span class="badge-name">Compile Success</span>
+                        <span class="badge-desc">Get 100% on any practice quiz</span>
+                    </div>
+
+                    <!-- Code Debugger -->
+                    <div class="badge-box locked" id="badge-quiz_dev">
+                        <div class="badge-icon"><i class="fas fa-bug"></i></div>
+                        <span class="badge-name">Code Debugger</span>
+                        <span class="badge-desc">Take at least 3 practice quizzes</span>
+                    </div>
+
+                    <!-- Card Scholar -->
+                    <div class="badge-box locked" id="badge-flashcard_novice">
+                        <div class="badge-icon"><i class="fas fa-bookmark"></i></div>
+                        <span class="badge-name">Card Scholar</span>
+                        <span class="badge-desc">Master 10 flashcard concepts</span>
+                    </div>
+
+                    <!-- Card Master -->
+                    <div class="badge-box locked" id="badge-flashcard_expert">
+                        <div class="badge-icon"><i class="fas fa-layer-group"></i></div>
+                        <span class="badge-name">Card Master</span>
+                        <span class="badge-desc">Master 30 flashcard concepts</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Reset -->
+            <div class="reset-wrapper">
+                <button class="btn-reset" id="btn-reset-data">
+                    <i class="fas fa-terminal"></i> Reset System Developer Memory Cache
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="dev-footer-card">
+                <h3>Suchismita Padhi</h3>
+                <div class="dev-footer-tagline">
+                    STUDENT DEVELOPER | FULL STACK DEVELOPER | CODEVERSE CREATOR 🚀
+                </div>
+                <div class="dev-footer-links">
+                    <a href="https://www.linkedin.com/in/suchismitapadhi89" target="_blank" rel="noopener noreferrer" class="dev-pill-btn linkedin">
+                        <i class="fab fa-linkedin"></i> LinkedIn
+                    </a>
+                    <a href="https://github.com/Suchismitapadhi123" target="_blank" rel="noopener noreferrer" class="dev-pill-btn github">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                    <a href="https://www.instagram.com/khushi143451?igsh=MWluZDZzbW51azEwaA==" target="_blank" rel="noopener noreferrer" class="dev-pill-btn instagram">
+                        <i class="fab fa-instagram"></i> Instagram
+                    </a>
+                    <a href="mailto:suchismitapadhi89@gmail.com" class="dev-pill-btn email">
+                        <i class="fas fa-envelope"></i> suchismitapadhi89@gmail.com
+                    </a>
+                </div>
+                <div class="dev-footer-copy">
+                    &copy; 2026 Suchismita Padhi • Built with ⚡ HTML, CSS & JavaScript • CodeVerse Student Dev Portal
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+    <script src="js/progress.js"></script>
+</body>
+</html>
