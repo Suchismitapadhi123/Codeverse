@@ -557,20 +557,33 @@
             <div class="modal-group">
                 <label for="modal-select-mode">Engine Protocol</label>
                 <select id="modal-select-mode" class="custom-select" style="padding:0.75rem 1rem;">
-                    <option value="live">Live AI Tutor (Free / Online)</option>
                     <option value="mock">Simulated AI (Offline Syllabus DB)</option>
-                    <option value="claude">Live Claude API (Requires API Key)</option>
+                    <option value="gemini">Google Gemini API (Key-based / CORS-Friendly)</option>
+                    <option value="claude">Anthropic Claude API (Key-based / Proxy Needed)</option>
                 </select>
             </div>
 
-            <div class="modal-group" id="modal-key-group" style="display:none;">
-                <label for="modal-input-key">Anthropic Claude API Key</label>
-                <input type="password" id="modal-input-key" class="modal-input" placeholder="sk-ant-...">
+            <!-- Gemini Key Input Group -->
+            <div class="modal-group" id="modal-gemini-group" style="display:none;">
+                <label for="modal-input-gemini-key">Google Gemini API Key</label>
+                <input type="password" id="modal-input-gemini-key" class="modal-input" placeholder="AIzaSy...">
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem; line-height:1.4;">
+                    <i class="fas fa-key"></i> Get a 100% free API key from <a href="https://aistudio.google.com/" target="_blank" style="color:var(--color-teal); text-decoration:underline;">Google AI Studio</a>.
+                </p>
+                <p style="font-size:0.75rem; color:var(--color-green); margin-top:0.4rem; line-height:1.4;">
+                    <i class="fas fa-check-circle"></i> **CORS Friendly**: Google allows direct browser requests to Gemini without throwing security blocks!
+                </p>
+            </div>
+
+            <!-- Claude Key Input Group -->
+            <div class="modal-group" id="modal-claude-group" style="display:none;">
+                <label for="modal-input-claude-key">Anthropic Claude API Key</label>
+                <input type="password" id="modal-input-claude-key" class="modal-input" placeholder="sk-ant-...">
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-top:0.5rem; line-height:1.4;">
                     <i class="fas fa-shield-alt"></i> Cached locally inside your sandbox browser instance.
                 </p>
                 <p style="font-size:0.75rem; color:var(--color-crimson); margin-top:0.4rem; line-height:1.4;">
-                    <i class="fas fa-exclamation-triangle"></i> **Developer Note**: Direct browser calls trigger **CORS blocks** on Anthropic's endpoints. Use a CORS-bypass extension or developer proxy to run live keys.
+                    <i class="fas fa-exclamation-triangle"></i> **Developer Note**: Anthropic's endpoints block direct browser requests due to **CORS**. Requires a CORS extension or proxy.
                 </p>
             </div>
 

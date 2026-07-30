@@ -1,7 +1,8 @@
 // CodeVerse - AI Code Tutor Page Logic
 
-let tutorApiMode = 'live';
+let tutorApiMode = 'mock'; // Default to Simulated AI offline database for 100% out-of-the-box reliability
 let tutorClaudeKey = '';
+let tutorGeminiKey = '';
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
@@ -11,8 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function loadTutorSettings() {
-    tutorApiMode = safeStorage.getLocal('codeverse_api_mode') || 'live';
+    tutorApiMode = safeStorage.getLocal('codeverse_api_mode') || 'mock';
     tutorClaudeKey = safeStorage.getLocal('codeverse_claude_key') || '';
+    tutorGeminiKey = safeStorage.getLocal('codeverse_gemini_key') || '';
     updateTutorUI();
 }
 
@@ -21,8 +23,8 @@ function updateTutorUI() {
     const desc = document.getElementById('chat-engine-description');
 
     if (badge) {
-        if (tutorApiMode === 'live') {
-            badge.innerHTML = `<span class="status-badge live"><i class="fas fa-bolt"></i> Live AI Tutor</span>`;
+        if (tutorApiMode === 'gemini') {
+            badge.innerHTML = `<span class="status-badge live" style="border-color:var(--color-teal); color:var(--color-teal);"><i class="fas fa-bolt"></i> Gemini API</span>`;
         } else if (tutorApiMode === 'claude') {
             badge.innerHTML = `<span class="status-badge live" style="border-color:var(--color-violet); color:var(--color-violet);"><i class="fas fa-bolt"></i> Claude API</span>`;
         } else {
@@ -31,8 +33,8 @@ function updateTutorUI() {
     }
 
     if (desc) {
-        if (tutorApiMode === 'live') {
-            desc.textContent = `Live AI Tutor active. Powered by free, open-source online inference. No key required.`;
+        if (tutorApiMode === 'gemini') {
+            desc.textContent = `Live Google Gemini API active. Fast responses flowing directly from Google AI Studio.`;
         } else if (tutorApiMode === 'claude') {
             desc.textContent = `Live Claude API active. Explanations flow directly from Anthropic's developer models.`;
         } else {
@@ -47,14 +49,31 @@ function setupTutorEvents() {
     const modal = document.getElementById('api-modal-overlay');
     const saveBtn = document.getElementById('btn-save-api-settings');
     const selectMode = document.getElementById('modal-select-mode');
-    const keyGroup = document.getElementById('modal-key-group');
-    const keyInput = document.getElementById('modal-input-key');
+    
+    const geminiGroup = document.getElementById('modal-gemini-group');
+    const geminiInput = document.getElementById('modal-input-gemini-key');
+    const claudeGroup = document.getElementById('modal-claude-group');
+    const claudeInput = document.getElementById('modal-input-claude-key');
+
+    const updateModalVisibility = (mode) => {
+        if (mode === 'gemini') {
+            if (geminiGroup) geminiGroup.style.display = 'block';
+            if (claudeGroup) claudeGroup.style.display = 'none';
+        } else if (mode === 'claude') {
+            if (geminiGroup) geminiGroup.style.display = 'none';
+            if (claudeGroup) claudeGroup.style.display = 'block';
+        } else {
+            if (geminiGroup) geminiGroup.style.display = 'none';
+            if (claudeGroup) claudeGroup.style.display = 'none';
+        }
+    };
 
     if (openBtn && modal) {
         openBtn.addEventListener('click', () => {
-            selectMode.value = tutorApiMode;
-            keyInput.value = tutorClaudeKey;
-            keyGroup.style.display = tutorApiMode === 'claude' ? 'block' : 'none';
+            if (selectMode) selectMode.value = tutorApiMode;
+            if (geminiInput) geminiInput.value = tutorGeminiKey;
+            if (claudeInput) claudeInput.value = tutorClaudeKey;
+            updateModalVisibility(tutorApiMode);
             modal.classList.add('active');
         });
     }
@@ -65,18 +84,20 @@ function setupTutorEvents() {
         });
     }
 
-    if (selectMode && keyGroup) {
+    if (selectMode) {
         selectMode.addEventListener('change', () => {
-            keyGroup.style.display = selectMode.value === 'claude' ? 'block' : 'none';
+            updateModalVisibility(selectMode.value);
         });
     }
 
     if (saveBtn && modal) {
         saveBtn.addEventListener('click', () => {
-            tutorApiMode = selectMode.value;
-            tutorClaudeKey = keyInput.value.trim();
+            if (selectMode) tutorApiMode = selectMode.value;
+            if (geminiInput) tutorGeminiKey = geminiInput.value.trim();
+            if (claudeInput) tutorClaudeKey = claudeInput.value.trim();
 
             safeStorage.setLocal('codeverse_api_mode', tutorApiMode);
+            safeStorage.setLocal('codeverse_gemini_key', tutorGeminiKey);
             safeStorage.setLocal('codeverse_claude_key', tutorClaudeKey);
 
             updateTutorUI();
@@ -214,8 +235,8 @@ function submitDevQuery() {
     const loaderId = appendTypingIndicator();
     recordActivity(); // Log streak commit
 
-    if (tutorApiMode === 'live') {
-        askPollinationsAPI(query, loaderId);
+    if (tutorApiMode === 'gemini') {
+        askGeminiAPI(query, loaderId);
     } else if (tutorApiMode === 'claude') {
         askClaudeAPI(query, loaderId);
     } else {
@@ -694,49 +715,61 @@ Check your API key validity, internet status, and quota availability.`, 'ai');
 }
 
 /**
- * Free Live Pollinations AI Chat API Call (Keyless & CORS-enabled)
+ * Live Google Gemini API Chat API Call (CORS-friendly browser access)
  */
-function askPollinationsAPI(prompt, loaderId) {
-    const url = 'https://text.pollinations.ai/';
+function askGeminiAPI(prompt, loaderId) {
+    if (!tutorGeminiKey) {
+        removeTypingIndicator(loaderId);
+        appendTutorBubble(`### ⚠️ Google Gemini API Key Required\n\nYou have selected Google Gemini, but your API Key is empty.\n\n**How to configure:**\n1. Click **Configure Engine** in the sidebar.\n2. Paste your Gemini API Key.\n3. Click **Save Configuration**.\n\n*Tip: You can get a free, keyless sandbox experience by switching back to **Simulated AI**.*`, 'ai');
+        return;
+    }
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${tutorGeminiKey}`;
 
     fetch(url, {
         method: 'POST',
         headers: {
-            'content-type': 'application/json'
+            'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            messages: [
-                {
-                    role: 'system',
-                    content: "You are the CodeVerse AI Code Tutor, a premium coding helper for programming students. Provide clear, structured, step-by-step programming explanations. Include ASCII diagrams and time/space complexity analysis. Use monospace formatting for code. Keep responses highly technical and under 500 words. Always format in markdown."
-                },
-                {
-                    role: 'user',
-                    content: prompt
-                }
-            ],
-            model: 'openai',
-            jsonMode: false,
-            stream: false
+            contents: [{
+                parts: [{
+                    text: prompt
+                }]
+            }],
+            systemInstruction: {
+                parts: [{
+                    text: "You are the CodeVerse AI Code Tutor, a premium programming helper for computer science and software engineering students. Provide clear, structured, step-by-step programming explanations. Include ASCII diagrams and complexity analysis. Use monospace blocks for all code. Keep responses highly technical, structured, and under 500 words. Always format in markdown."
+                }]
+            }
         })
     })
     .then(res => {
         if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`);
+            return res.json().then(data => {
+                throw new Error(data.error?.message || `HTTP ${res.status}`);
+            });
         }
-        return res.text();
+        return res.json();
     })
-    .then(text => {
+    .then(data => {
         removeTypingIndicator(loaderId);
-        if (text) {
+        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts && data.candidates[0].content.parts[0]) {
+            const text = data.candidates[0].content.parts[0].text;
             appendTutorBubble(text, 'ai');
         } else {
-            appendTutorBubble("Received empty response from Live AI.", 'ai');
+            appendTutorBubble("No response text returned from Gemini API.", 'ai');
         }
     })
     .catch(err => {
-        console.error('Live AI call failed:', err);
+        console.error('Gemini API call failed:', err);
         removeTypingIndicator(loaderId);
-        appendTutorBubble(`### ❌ Live AI Request Failed\n\nUnable to connect to the online AI service. Please check your network connection.\n\nError details:\n\`\`\`\n${err.message}\n\`\`\`\n\n*Tip: You can switch back to **Simulated AI (Offline)** in the engine settings to continue learning.*`, 'ai');
+        
+        let errorMsg = err.message;
+        if (errorMsg.includes('API key not valid')) {
+            errorMsg = "Your Gemini API Key is invalid. Please double-check it in Google AI Studio.";
+        }
+        
+        appendTutorBubble(`### ❌ Gemini Request Failed\n\nUnable to connect to Google Gemini services.\n\n**Error details:**\n\`\`\`\n${errorMsg}\n\`\`\`\n\n*Tip: Switch back to **Simulated AI** in settings to use the offline tutor database.*`, 'ai');
     });
 }
